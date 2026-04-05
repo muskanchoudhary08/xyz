@@ -3,6 +3,7 @@ from jose import JWTError, jwt
 from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+import uuid
 
 # ── CONFIG ────────────────────────────────────────────────────
 SECRET_KEY = "tripzy_secret_key_change_this_in_production"
@@ -25,6 +26,11 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
 def create_access_token(data: dict) -> str:
     """Create a JWT token with expiry"""
     to_encode = data.copy()
+    
+    # Convert UUID to string if present (for JSON serialization)
+    if "sub" in to_encode:
+        to_encode["sub"] = str(to_encode["sub"])
+    
     expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)

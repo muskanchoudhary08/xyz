@@ -1,7 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from routes import quiz
 
 from routes import auth, users, profiles, trips, matches, messages, subscriptions, payments, bookings, reviews, notifications
+
+print("Checking quiz router...")
+try:
+    from routes import quiz
+    print("Quiz router imported successfully")
+except Exception as e:
+    print(f"Error importing quiz: {e}")
 
 app = FastAPI(
     title="Tripzy API",
@@ -12,7 +20,7 @@ app = FastAPI(
 # ── CORS — allows React frontend to talk to this backend ─────
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # React runs on port 3000
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,6 +38,7 @@ app.include_router(payments.router,      prefix="/payments",      tags=["Payment
 app.include_router(bookings.router,      prefix="/bookings",      tags=["Bookings"])
 app.include_router(reviews.router,       prefix="/reviews",       tags=["Reviews"])
 app.include_router(notifications.router, prefix="/notifications", tags=["Notifications"])
+app.include_router(quiz.router, prefix="/quiz", tags=["Quiz"])
 
 @app.get("/")
 def root():

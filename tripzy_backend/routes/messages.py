@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db
-from models import Message, Match
+from models import Message, Match, User
 from auth import get_current_user
 
 router = APIRouter()
@@ -12,21 +12,34 @@ class MessageRequest(BaseModel):
     receiverId:  str
     messageText: str
 
-# ── GET CONVERSATION ──────────────────────────────────────────
 @router.get("/{matchId}")
 def get_messages(matchId: str, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     messages = db.query(Message).filter(Message.matchId == matchId).order_by(Message.sentAt).all()
-    return messages
+    result = []
+    for msg in messages:
+        sender = db.query(User).filter(User.userId == msg.senderId).first()
+        result.append({
+            "messageId": msg.messageId,
+            "messageText": msg.messageText,
+            "senderId": msg.senderId,
+            "senderName": sender.fullName if sender else "Unknown",
+            "receiverId": msg.receiverId,
+            "matchId": msg.matchId,
+            "readStatus": msg.readStatus,
+            "sentAt": msg.sentAt
+        })
+    return result
 
-# ── SEND MESSAGE ──────────────────────────────────────────────
 @router.post("", status_code=201)
 def send_message(data: MessageRequest, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     userId = current_user["sub"]
 
-    # Verify the users are matched
     match = db.query(Match).filter(Match.matchId == data.matchId).first()
     if not match:
-        raise HTTPException(status_code=403, detail="Cannot message — not matched")
+        raise HTTPException(status_code=404, detail="Match not found")
+
+    if match.user1Id != userId and match.user2Id != userId:
+        raise HTTPException(status_code=403, detail="You are not part of this match")
 
     message = Message(
         senderId=userId,
@@ -37,9 +50,9 @@ def send_message(data: MessageRequest, db: Session = Depends(get_db), current_us
     db.add(message)
     db.commit()
     db.refresh(message)
+
     return {"message": "Message sent", "messageId": message.messageId}
 
-# ── MARK AS READ ──────────────────────────────────────────────
 @router.patch("/{messageId}/read")
 def mark_read(messageId: str, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     message = db.query(Message).filter(Message.messageId == messageId).first()

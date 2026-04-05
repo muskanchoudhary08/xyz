@@ -35,7 +35,14 @@ def create_profile(data: ProfileRequest, db: Session = Depends(get_db), current_
     if existing:
         raise HTTPException(status_code=409, detail="Travel profile already exists")
 
-    profile = TravelProfile(userId=userId, **data.dict())
+    # Convert empty strings to None for date fields
+    profile_data = data.dict()
+    if profile_data.get("availabilityStart") == "":
+        profile_data["availabilityStart"] = None
+    if profile_data.get("availabilityEnd") == "":
+        profile_data["availabilityEnd"] = None
+
+    profile = TravelProfile(userId=userId, **profile_data)
     db.add(profile)
     db.commit()
     db.refresh(profile)
@@ -48,7 +55,14 @@ def update_profile(profileId: str, data: ProfileRequest, db: Session = Depends(g
     if not profile:
         raise HTTPException(status_code=404, detail="Profile not found")
 
-    for key, value in data.dict(exclude_none=True).items():
+    update_data = data.dict(exclude_none=True)
+    # Convert empty strings to None for date fields
+    if update_data.get("availabilityStart") == "":
+        update_data["availabilityStart"] = None
+    if update_data.get("availabilityEnd") == "":
+        update_data["availabilityEnd"] = None
+
+    for key, value in update_data.items():
         setattr(profile, key, value)
 
     db.commit()

@@ -6,6 +6,7 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
+import QuizPublic from "./pages/QuizPublic";
 import ProfileSetup from "./pages/ProfileSetup";
 import Matches from "./pages/Matches";
 import Messages from "./pages/Messages";
@@ -18,13 +19,12 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<Home />} />
-        </Route>
-
+        {/* PUBLIC ROUTES - No login needed */}
+        <Route path="/" element={<QuizPublic />} />
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
 
+        {/* PROTECTED ROUTES - Login required */}
         <Route
           element={
             <ProtectedRoute>

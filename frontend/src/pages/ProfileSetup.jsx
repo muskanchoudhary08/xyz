@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
 
@@ -19,6 +19,44 @@ export default function ProfileSetup() {
 
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [fetching, setFetching] = useState(true);
+
+  const userId = localStorage.getItem("userId");
+
+  // Fetch existing profile when page loads
+  useEffect(() => {
+    const fetchProfile = async () => {
+      if (!userId) {
+        setFetching(false);
+        return;
+      }
+
+      try {
+        const response = await api.get(`/profile/${userId}`);
+        const profile = response.data;
+        
+        // Pre-fill form with existing data
+        setFormData({
+          preferredDestination: profile.preferredDestination || "",
+          budgetRange: profile.budgetRange || "",
+          travelStyle: profile.travelStyle || "",
+          accommodationType: profile.accommodationType || "",
+          foodPreference: profile.foodPreference || "",
+          languagePreference: profile.languagePreference || "",
+          interests: profile.interests || "",
+          availabilityStart: profile.availabilityStart || "",
+          availabilityEnd: profile.availabilityEnd || "",
+        });
+      } catch (err) {
+        // Profile doesn't exist - that's fine, form stays empty
+        console.log("No existing profile, create new one");
+      } finally {
+        setFetching(false);
+      }
+    };
+
+    fetchProfile();
+  }, [userId]);
 
   const handleChange = (e) => {
     setFormData((prev) => ({
@@ -42,6 +80,14 @@ export default function ProfileSetup() {
       setLoading(false);
     }
   };
+
+  if (fetching) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+        <div className="text-slate-600">Loading profile...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center px-6 py-10">

@@ -4,6 +4,7 @@ from sqlalchemy.dialects.postgresql import ARRAY
 from database import Base
 from datetime import datetime
 import uuid
+from sqlalchemy.sql import func
 
 def gen_id():
     return str(uuid.uuid4())
@@ -163,3 +164,24 @@ class Notification(Base):
     createdAt      = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="notifications")
+# ── QUIZ QUESTION MODEL ────────────────────────────────────────
+class QuizQuestion(Base):
+    __tablename__ = "quiz_questions"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    question_text = Column(Text, nullable=False)
+    option_a = Column(Text, nullable=False)
+    option_b = Column(Text, nullable=False)
+    option_c = Column(Text, nullable=False)
+    option_d = Column(Text, nullable=False)
+
+
+# ── USER QUIZ RESPONSE MODEL ───────────────────────────────────
+class UserQuizResponse(Base):
+    __tablename__ = "user_quiz_responses"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("users.userId"), nullable=False)  # Changed to String
+    question_id = Column(Integer, ForeignKey("quiz_questions.id"), nullable=False)
+    selected_option = Column(String(1))
+    submitted_at = Column(DateTime, default=datetime.utcnow)

@@ -9,9 +9,14 @@ export default function Chat() {
 
   const [messages, setMessages] = useState([]);
   const [messageText, setMessageText] = useState("");
+  
+  // Get receiverId from URL query parameter or location state
+  const queryParams = new URLSearchParams(location.search);
+  const urlReceiverId = queryParams.get('receiverId');
   const [receiverId, setReceiverId] = useState(
-    location.state?.receiverId || ""
+    urlReceiverId || location.state?.receiverId || ""
   );
+  
   const [error, setError] = useState("");
 
   const currentUserId = localStorage.getItem("userId");
@@ -42,15 +47,17 @@ export default function Chat() {
   const handleSend = async () => {
     if (!messageText.trim()) return;
 
-    if (!receiverId) {
-      alert("Receiver ID missing. Open chat from Matches page.");
-      return;
-    }
+    // Get receiverId from URL if not in state
+const finalReceiverId = receiverId || queryParams.get('receiverId');
+if (!finalReceiverId) {
+  alert("Receiver ID missing. Open chat from Matches page.");
+  return;
+}
 
     try {
       await api.post("/messages", {
         matchId,
-        receiverId,
+        receiverId: finalReceiverId,
         messageText,
       });
 
@@ -108,7 +115,7 @@ export default function Chat() {
                     {msg.messageText}
 
                     <div className="mt-1 text-xs opacity-70">
-                      {isMine ? "You" : "Them"}
+                      {isMine ? "You" :  msg.senderName || "Other Traveler"}
                     </div>
                   </div>
                 );

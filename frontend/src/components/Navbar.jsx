@@ -52,6 +52,7 @@ export default function Navbar() {
             <Link to="/profile-setup" className={linkClass("/profile-setup")}>Profile</Link>
             <Link to="/subscription" className={linkClass("/subscription")}>Subscription</Link>
             <Link to="/payments" className={linkClass("/payments")}>Payments</Link>
+            <Link to="/reviews" className={linkClass("/reviews")}>Reviews</Link>
             <Link to="/notifications" className={linkClass("/notifications")}>
               Notifications
               {unreadCount > 0 && (

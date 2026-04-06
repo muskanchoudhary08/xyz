@@ -9,6 +9,9 @@ export default function Matches() {
   const [error, setError] = useState("");
   const [connectError, setConnectError] = useState("");
   const [loading, setLoading] = useState(true);
+  const [blockedUsers, setBlockedUsers] = useState(
+    JSON.parse(localStorage.getItem("blockedUsers") || "[]")
+  );
 
   const fetchMatches = async () => {
     try {
@@ -36,8 +39,9 @@ export default function Matches() {
       localStorage.setItem("savedMatches", JSON.stringify(savedMatches));
 
       const lastViewed = JSON.parse(localStorage.getItem("lastViewedMatches") || "[]");
-      const matchInfo = matches.find(m => m.userId === user2Id);
-      if (matchInfo && !lastViewed.find(m => m.userId === user2Id)) {
+      const matchInfo = matches.find((m) => m.userId === user2Id);
+
+      if (matchInfo && !lastViewed.find((m) => m.userId === user2Id)) {
         lastViewed.push(matchInfo);
         localStorage.setItem("lastViewedMatches", JSON.stringify(lastViewed));
       }
@@ -48,7 +52,10 @@ export default function Matches() {
 
     try {
       const response = await api.post("/matches", { user2Id });
-      const newMatchId = response.data?.matchId || response.data?.match_id || response.data?.id;
+      const newMatchId =
+        response.data?.matchId ||
+        response.data?.match_id ||
+        response.data?.id;
 
       if (newMatchId) {
         addNotification({
@@ -62,8 +69,9 @@ export default function Matches() {
         localStorage.setItem("savedMatches", JSON.stringify(savedMatches));
 
         const lastViewed = JSON.parse(localStorage.getItem("lastViewedMatches") || "[]");
-        const matchInfo = matches.find(m => m.userId === user2Id);
-        if (matchInfo && !lastViewed.find(m => m.userId === user2Id)) {
+        const matchInfo = matches.find((m) => m.userId === user2Id);
+
+        if (matchInfo && !lastViewed.find((m) => m.userId === user2Id)) {
           lastViewed.push(matchInfo);
           localStorage.setItem("lastViewedMatches", JSON.stringify(lastViewed));
         }
@@ -74,13 +82,29 @@ export default function Matches() {
       }
     } catch (err) {
       console.error("Connect error:", err);
-      setConnectError(err.response?.data?.detail || "Could not connect. Please try again.");
+      setConnectError(
+        err.response?.data?.detail || "Could not connect. Please try again."
+      );
     }
+  };
+
+  const handleBlock = (userId) => {
+    const updated = [...blockedUsers, userId];
+    setBlockedUsers(updated);
+    localStorage.setItem("blockedUsers", JSON.stringify(updated));
+  };
+
+  const handleReview = (userId) => {
+    navigate("/reviews", { state: { reviewedUserId: userId } });
   };
 
   if (loading) {
     return <div className="text-slate-600">Loading matches...</div>;
   }
+
+  const visibleMatches = matches.filter(
+    (m) => !blockedUsers.includes(m.userId)
+  );
 
   return (
     <div>
@@ -92,13 +116,13 @@ export default function Matches() {
       {error && <p className="mb-4 text-red-500">{error}</p>}
       {connectError && <p className="mb-4 text-red-500">{connectError}</p>}
 
-      {matches.length === 0 ? (
+      {visibleMatches.length === 0 ? (
         <div className="rounded-2xl bg-white p-6 shadow-sm text-slate-600">
           No matches found yet. Try adjusting your travel profile.
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {matches.map((match) => (
+          {visibleMatches.map((match) => (
             <div key={match.userId} className="rounded-2xl bg-white p-6 shadow-sm">
               <div className="mb-4 flex items-center gap-4">
                 <div className="h-14 w-14 rounded-full bg-slate-200 overflow-hidden">
@@ -110,6 +134,7 @@ export default function Matches() {
                     />
                   ) : null}
                 </div>
+
                 <div>
                   <h2 className="text-xl font-semibold text-slate-800">
                     {match.fullName || "Traveler"}
@@ -121,18 +146,46 @@ export default function Matches() {
               </div>
 
               <div className="space-y-2 text-sm text-slate-600">
-                <p><span className="font-medium">Match score:</span> {match.matchScore ?? "N/A"}%</p>
-                <p><span className="font-medium">Travel style:</span> {match.travelStyle || "Not added"}</p>
-                <p><span className="font-medium">Budget:</span> {match.budgetRange || "Not added"}</p>
-                <p><span className="font-medium">Interests:</span> {match.interests || "Not added"}</p>
+                <p>
+                  <span className="font-medium">Match score:</span>{" "}
+                  {match.matchScore ?? "N/A"}%
+                </p>
+                <p>
+                  <span className="font-medium">Travel style:</span>{" "}
+                  {match.travelStyle || "Not added"}
+                </p>
+                <p>
+                  <span className="font-medium">Budget:</span>{" "}
+                  {match.budgetRange || "Not added"}
+                </p>
+                <p>
+                  <span className="font-medium">Interests:</span>{" "}
+                  {match.interests || "Not added"}
+                </p>
               </div>
 
-              <button
-                onClick={() => handleConnect(match.userId, match.matchId)}
-                className="mt-5 w-full rounded-xl bg-sky-500 py-3 font-semibold text-white hover:bg-sky-600"
-              >
-                Connect / Open Chat
-              </button>
+              <div className="mt-5 flex gap-2">
+                <button
+                  onClick={() => handleConnect(match.userId, match.matchId)}
+                  className="flex-1 rounded-xl bg-sky-500 py-3 font-semibold text-white hover:bg-sky-600"
+                >
+                  Connect / Chat
+                </button>
+
+                <button
+                  onClick={() => handleReview(match.userId)}
+                  className="rounded-xl bg-green-500 px-4 py-3 font-semibold text-white hover:bg-green-600"
+                >
+                  Review
+                </button>
+
+                <button
+                  onClick={() => handleBlock(match.userId)}
+                  className="rounded-xl bg-red-500 px-4 py-3 font-semibold text-white hover:bg-red-600"
+                >
+                  Block
+                </button>
+              </div>
             </div>
           ))}
         </div>

@@ -2,7 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 import DashboardLayout from "./layouts/DashboardLayout";
 import ProtectedRoute from "./components/ProtectedRoute";
-
+import Reviews from "./pages/Reviews";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
@@ -29,16 +29,20 @@ export default function App() {
           element={
             <ProtectedRoute>
               <DashboardLayout />
+              
             </ProtectedRoute>
           }
         >
-          <Route path="/profile-setup" element={<ProfileSetup />} />
-          <Route path="/matches" element={<Matches />} />
+          
+      <Route path="/reviews" element={<Reviews />} />
+                <Route path="/matches" element={<Matches />} />
           <Route path="/messages" element={<Messages />} />
           <Route path="/chat/:id" element={<Chat />} />
           <Route path="/subscription" element={<Subscription />} />
           <Route path="/payments" element={<Payments />} />
           <Route path="/notifications" element={<Notifications />} />
+              <Route path="/profile-setup" element={<ProfileSetup />} />
+        
         </Route>
       </Routes>
     </BrowserRouter>

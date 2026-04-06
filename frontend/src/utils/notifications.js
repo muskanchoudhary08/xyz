@@ -1,9 +1,14 @@
+const getKey = () => {
+  const userId = localStorage.getItem("userId") || "guest";
+  return `notifications_${userId}`;
+};
+
 export const getNotifications = () => {
-  return JSON.parse(localStorage.getItem("notifications") || "[]");
+  return JSON.parse(localStorage.getItem(getKey()) || "[]");
 };
 
 export const saveNotifications = (notifications) => {
-  localStorage.setItem("notifications", JSON.stringify(notifications));
+  localStorage.setItem(getKey(), JSON.stringify(notifications));
 };
 
 export const addNotification = ({ title, message, type }) => {
@@ -33,5 +38,5 @@ export const markNotificationAsRead = (notificationId) => {
 };
 
 export const clearNotifications = () => {
-  localStorage.removeItem("notifications");
+  localStorage.removeItem(getKey());
 };

@@ -15,7 +15,7 @@ class SubscriptionRequest(BaseModel):
 
 @router.get("/{userId}")
 def get_subscription(userId: str, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
-    sub = db.query(Subscription).filter(Subscription.userId == userId).first()
+    sub = db.query(Subscription).filter(Subscription.userId == userId, Subscription.subscriptionStatus == "Active").first()
     if not sub:
         raise HTTPException(status_code=404, detail="No subscription found")
     return sub
@@ -23,9 +23,19 @@ def get_subscription(userId: str, db: Session = Depends(get_db), current_user: d
 @router.post("", status_code=201)
 def create_subscription(data: SubscriptionRequest, db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     userId = current_user["sub"]
-    existing = db.query(Subscription).filter(Subscription.userId == userId, Subscription.subscriptionStatus == "Active").first()
+    existing = db.query(Subscription).filter(Subscription.userId == userId).first()
+
     if existing:
-        raise HTTPException(status_code=409, detail="Already subscribed")
+        if existing.subscriptionStatus == "Active":
+            raise HTTPException(status_code=409, detail="Already subscribed")
+        existing.planName = data.planName
+        existing.price = data.price
+        existing.duration = data.duration
+        existing.subscriptionStatus = "Active"
+        db.commit()
+        db.refresh(existing)
+        return {"message": "Subscription activated", "subscriptionId": existing.subscriptionId}
+
     sub = Subscription(userId=userId, **data.dict())
     db.add(sub)
     db.commit()

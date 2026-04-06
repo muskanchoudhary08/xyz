@@ -7,6 +7,7 @@ export default function Matches() {
   const navigate = useNavigate();
   const [matches, setMatches] = useState([]);
   const [error, setError] = useState("");
+  const [connectError, setConnectError] = useState("");
   const [loading, setLoading] = useState(true);
 
   const fetchMatches = async () => {
@@ -27,52 +28,53 @@ export default function Matches() {
   }, []);
 
   const handleConnect = async (user2Id, matchId) => {
+    setConnectError("");
+
     if (matchId) {
-  // Save to localStorage for Messages page
-  const savedMatches = JSON.parse(localStorage.getItem("savedMatches") || "{}");
-  savedMatches[user2Id] = matchId;
-  localStorage.setItem("savedMatches", JSON.stringify(savedMatches));
+      const savedMatches = JSON.parse(localStorage.getItem("savedMatches") || "{}");
+      savedMatches[user2Id] = matchId;
+      localStorage.setItem("savedMatches", JSON.stringify(savedMatches));
 
-  const lastViewed = JSON.parse(localStorage.getItem("lastViewedMatches") || "[]");
-  const matchInfo = matches.find(m => m.userId === user2Id);
-  if (matchInfo && !lastViewed.find(m => m.userId === user2Id)) {
-    lastViewed.push(matchInfo);
-    localStorage.setItem("lastViewedMatches", JSON.stringify(lastViewed));
-  }
+      const lastViewed = JSON.parse(localStorage.getItem("lastViewedMatches") || "[]");
+      const matchInfo = matches.find(m => m.userId === user2Id);
+      if (matchInfo && !lastViewed.find(m => m.userId === user2Id)) {
+        lastViewed.push(matchInfo);
+        localStorage.setItem("lastViewedMatches", JSON.stringify(lastViewed));
+      }
 
-  navigate(`/chat/${matchId}`, { state: { receiverId: user2Id } });
-  return;
-}
+      navigate(`/chat/${matchId}`, { state: { receiverId: user2Id } });
+      return;
+    }
+
     try {
       const response = await api.post("/matches", { user2Id });
       const newMatchId = response.data?.matchId || response.data?.match_id || response.data?.id;
-      
+
       if (newMatchId) {
-  addNotification({
-    title: "New Match",
-    message: "You connected with a traveler successfully.",
-    type: "match",
-  });
+        addNotification({
+          title: "New Match",
+          message: "You connected with a traveler successfully.",
+          type: "match",
+        });
 
-  // Save to localStorage for Messages page
-  const savedMatches = JSON.parse(localStorage.getItem("savedMatches") || "{}");
-  savedMatches[user2Id] = newMatchId;
-  localStorage.setItem("savedMatches", JSON.stringify(savedMatches));
+        const savedMatches = JSON.parse(localStorage.getItem("savedMatches") || "{}");
+        savedMatches[user2Id] = newMatchId;
+        localStorage.setItem("savedMatches", JSON.stringify(savedMatches));
 
-  const lastViewed = JSON.parse(localStorage.getItem("lastViewedMatches") || "[]");
-  const matchInfo = matches.find(m => m.userId === user2Id);
-  if (matchInfo && !lastViewed.find(m => m.userId === user2Id)) {
-    lastViewed.push(matchInfo);
-    localStorage.setItem("lastViewedMatches", JSON.stringify(lastViewed));
-  }
+        const lastViewed = JSON.parse(localStorage.getItem("lastViewedMatches") || "[]");
+        const matchInfo = matches.find(m => m.userId === user2Id);
+        if (matchInfo && !lastViewed.find(m => m.userId === user2Id)) {
+          lastViewed.push(matchInfo);
+          localStorage.setItem("lastViewedMatches", JSON.stringify(lastViewed));
+        }
 
-  navigate(`/chat/${newMatchId}`, { state: { receiverId: user2Id } });
+        navigate(`/chat/${newMatchId}`, { state: { receiverId: user2Id } });
       } else {
-        alert("Could not create match.");
+        setConnectError("Could not create match. Please try again.");
       }
     } catch (err) {
       console.error("Connect error:", err);
-      alert(err.response?.data?.detail || "Could not connect.");
+      setConnectError(err.response?.data?.detail || "Could not connect. Please try again.");
     }
   };
 
@@ -88,6 +90,7 @@ export default function Matches() {
       </div>
 
       {error && <p className="mb-4 text-red-500">{error}</p>}
+      {connectError && <p className="mb-4 text-red-500">{connectError}</p>}
 
       {matches.length === 0 ? (
         <div className="rounded-2xl bg-white p-6 shadow-sm text-slate-600">

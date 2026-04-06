@@ -24,6 +24,7 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (loading) return;
     setError("");
     setSuccess("");
     setLoading(true);
@@ -31,16 +32,12 @@ export default function Signup() {
     try {
       const response = await api.post("/auth/register", formData);
       console.log("Signup success:", response.data);
-
-      setSuccess("Account created successfully.");
-
+      setSuccess("Account created! Redirecting to login...");
       setTimeout(() => {
         navigate("/login");
-      }, 1000);
+      }, 1500);
     } catch (err) {
       console.error("Signup error:", err);
-      console.error("Signup error response:", err.response);
-
       setError(
         err.response?.data?.detail || "Signup failed. Please try again."
       );
@@ -54,9 +51,9 @@ export default function Signup() {
       <div className="w-1/2 flex items-center justify-center bg-white px-12">
         <div className="w-full max-w-md">
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-slate-800 mb-2">Create Account</h1>
+            <h1 className="text-3xl font-bold text-slate-800 mb-2">Create Your Account</h1>
             <p className="text-slate-500">
-              Start your journey to finding your ideal travel companion
+              Complete your registration to see matches
             </p>
           </div>
 

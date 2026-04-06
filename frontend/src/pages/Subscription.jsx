@@ -5,6 +5,8 @@ import { addNotification } from "../utils/notifications";
 export default function Subscription() {
   const [subscription, setSubscription] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
 
   const plans = [
     { planName: "Basic", price: 5, duration: "Monthly" },
@@ -28,6 +30,8 @@ export default function Subscription() {
 
   const handleSubscribe = async (plan) => {
     setLoading(true);
+    setMessage("");
+    setError("");
 
     try {
       const subRes = await api.post("/subscriptions", {
@@ -56,24 +60,26 @@ export default function Subscription() {
         type: "payment",
       });
 
-      alert("Subscription activated successfully!");
+      setMessage("Subscription activated successfully!");
       fetchSubscription();
     } catch (err) {
       console.error(err);
-      alert(err.response?.data?.detail || "Subscription failed");
+      setError(err.response?.data?.detail || "Subscription failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
   const handleCancel = async () => {
+    setMessage("");
+    setError("");
     try {
       await api.delete(`/subscriptions/${subscription.subscriptionId}`);
-      alert("Subscription cancelled");
+      setMessage("Subscription cancelled.");
       fetchSubscription();
     } catch (err) {
       console.error(err);
-      alert("Cancel failed");
+      setError("Cancel failed. Please try again.");
     }
   };
 
@@ -83,6 +89,9 @@ export default function Subscription() {
         <h1 className="text-3xl font-bold text-slate-800">Subscription Plans</h1>
         <p className="text-slate-500">Choose the best plan for your travel experience.</p>
       </div>
+
+      {message && <p className="mb-4 text-green-600 font-medium">{message}</p>}
+      {error && <p className="mb-4 text-red-500">{error}</p>}
 
       {subscription ? (
         <div className="rounded-2xl bg-white p-6 shadow-sm">

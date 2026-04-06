@@ -10,7 +10,9 @@ export default function QuizPublic() {
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [showSignup, setShowSignup] = useState(false);
-  const [questions, setQuestions] = useState([
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [questions] = useState([
     { id: 1, question_text: "What is your ideal vacation destination?", option_a: "Mountains", option_b: "Beaches", option_c: "Cities", option_d: "Countryside" },
     { id: 2, question_text: "What is your travel budget range?", option_a: "Under $500", option_b: "$500-$1000", option_c: "$1000-$2000", option_d: "$2000+" },
     { id: 3, question_text: "What type of accommodation do you prefer?", option_a: "Hostel", option_b: "Hotel", option_c: "Resort", option_d: "Airbnb" },
@@ -28,11 +30,9 @@ export default function QuizPublic() {
 
   const handleAnswer = (option) => {
     setAnswers({ ...answers, [currentQuestion.id]: option });
-    
     if (currentIndex < questions.length - 1) {
       setCurrentIndex(currentIndex + 1);
     } else {
-      // Quiz completed, show signup form
       setShowSignup(true);
     }
   };
@@ -43,109 +43,69 @@ export default function QuizPublic() {
     }
   };
 
-const handleSignup = async (e) => {
-  e.preventDefault();
-  
-  try {
-    // Register user
-    const registerRes = await api.post("/auth/register", {
-      fullName,
-      email,
-      password
-    });
-    
-    console.log("User registered:", registerRes.data);
-    
-    // Login to get token
-    const loginRes = await api.post("/auth/login", { email, password });
-    const token = loginRes.data.access_token;
-    const userId = loginRes.data.userId;
-    
-    console.log("Logged in, userId:", userId);
-    
-    localStorage.setItem("token", token);
-    localStorage.setItem("userId", userId);
-    localStorage.setItem("fullName", fullName);
-    
-    // Save quiz answers
-    await api.post("/quiz/submit", { responses: answers }, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    
-    console.log("Quiz answers saved");
-    
-    // Create travel profile from quiz answers
-    const profileData = {
-      preferredDestination: getDestinationFromQuiz(answers),
-      budgetRange: getBudgetFromQuiz(answers),
-      travelStyle: getTravelStyleFromQuiz(answers),
-      interests: getInterestsFromQuiz(answers)
-    };
-    
-    console.log("Creating profile:", profileData);
-    
-    await api.post("/profile", profileData, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    
-    console.log("Profile created successfully");
-    
-    // Redirect to matches page
-    navigate("/matches");
-  } catch (err) {
-    console.error("Signup error:", err);
-    console.error("Error response:", err.response?.data);
-    alert(err.response?.data?.detail || "Signup failed. Please try again.");
+  const handleSignup = async (e) => {
+    e.preventDefault();
+    if (loading) return;
+    setError("");
+    setLoading(true);
+
+    try {
+      const registerRes = await api.post("/auth/register", { fullName, email, password });
+      console.log("User registered:", registerRes.data);
+
+      const loginRes = await api.post("/auth/login", { email, password });
+      const token = loginRes.data.access_token;
+      const userId = loginRes.data.userId;
+
+      localStorage.setItem("token", token);
+      localStorage.setItem("userId", userId);
+      localStorage.setItem("fullName", fullName);
+
+      const profileData = {
+        preferredDestination: getDestinationFromQuiz(answers),
+        budgetRange: getBudgetFromQuiz(answers),
+        travelStyle: getTravelStyleFromQuiz(answers),
+        interests: getInterestsFromQuiz(answers)
+      };
+
+      await api.post("/profile", profileData);
+
+      navigate("/matches");
+    } catch (err) {
+      console.error("Signup error:", err);
+      setError(err.response?.data?.detail || "Signup failed. Please try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  function getDestinationFromQuiz(answers) {
+    const destMap = { 'A': 'Mountains', 'B': 'Beaches', 'C': 'Cities', 'D': 'Countryside' };
+    return destMap[answers[1]] || 'Mountains';
   }
-};
 
-// Helper functions to map quiz answers to profile fields
-function getDestinationFromQuiz(answers) {
-  const destMap = {
-    'A': 'Mountains',
-    'B': 'Beaches',
-    'C': 'Cities',
-    'D': 'Countryside'
-  };
-  return destMap[answers[1]] || 'Mountains';
-}
+  function getBudgetFromQuiz(answers) {
+    const budgetMap = { 'A': 'Under $500', 'B': '$500-$1000', 'C': '$1000-$2000', 'D': '$2000+' };
+    return budgetMap[answers[2]] || '$1000-$2000';
+  }
 
-function getBudgetFromQuiz(answers) {
-  const budgetMap = {
-    'A': 'Under $500',
-    'B': '$500-$1000',
-    'C': '$1000-$2000',
-    'D': '$2000+'
-  };
-  return budgetMap[answers[2]] || '$1000-$2000';
-}
+  function getTravelStyleFromQuiz(answers) {
+    const styleMap = { 'A': 'Adventure', 'B': 'Relaxation', 'C': 'Cultural', 'D': 'Party' };
+    return styleMap[answers[4]] || 'Adventure';
+  }
 
-function getTravelStyleFromQuiz(answers) {
-  const styleMap = {
-    'A': 'Adventure',
-    'B': 'Relaxation',
-    'C': 'Cultural',
-    'D': 'Party'
-  };
-  return styleMap[answers[4]] || 'Adventure';
-}
+  function getInterestsFromQuiz(answers) {
+    const interestsMap = { 'A': 'Hiking', 'B': 'Swimming', 'C': 'Shopping', 'D': 'Sightseeing' };
+    return interestsMap[answers[6]] || 'Travel';
+  }
 
-function getInterestsFromQuiz(answers) {
-  const interestsMap = {
-    'A': 'Hiking',
-    'B': 'Swimming',
-    'C': 'Shopping',
-    'D': 'Sightseeing'
-  };
-  return interestsMap[answers[6]] || 'Travel';
-}
   if (showSignup) {
     return (
       <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
         <div className="max-w-md w-full bg-white rounded-2xl shadow-sm p-8">
           <h1 className="text-2xl font-bold text-slate-800 mb-2">Create Your Account</h1>
           <p className="text-slate-500 mb-6">Complete your registration to see matches</p>
-          
+
           <form onSubmit={handleSignup} className="space-y-4">
             <input
               type="text"
@@ -171,14 +131,18 @@ function getInterestsFromQuiz(answers) {
               className="w-full rounded-xl border border-slate-300 px-4 py-3"
               required
             />
+
+            {error && <p className="text-sm text-red-500">{error}</p>}
+
             <button
               type="submit"
-              className="w-full rounded-xl bg-sky-500 py-3 font-semibold text-white"
+              disabled={loading}
+              className="w-full rounded-xl bg-sky-500 py-3 font-semibold text-white hover:bg-sky-600 disabled:opacity-70"
             >
-              Create Account
+              {loading ? "Creating..." : "Create Account"}
             </button>
           </form>
-          
+
           <p className="text-center text-sm text-slate-500 mt-4">
             Already have an account? <a href="/login" className="text-sky-500">Sign In</a>
           </p>
@@ -201,7 +165,7 @@ function getInterestsFromQuiz(answers) {
               <span>{Math.round(((currentIndex + 1) / questions.length) * 100)}% complete</span>
             </div>
             <div className="w-full bg-slate-200 rounded-full h-2">
-              <div 
+              <div
                 className="bg-sky-500 h-2 rounded-full transition-all"
                 style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
               ></div>
@@ -216,7 +180,6 @@ function getInterestsFromQuiz(answers) {
             {['a', 'b', 'c', 'd'].map((opt) => {
               const optionText = currentQuestion[`option_${opt}`];
               if (!optionText) return null;
-              
               return (
                 <button
                   key={opt}

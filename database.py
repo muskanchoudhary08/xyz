@@ -5,7 +5,8 @@ from sqlalchemy.orm import sessionmaker
 # ── DATABASE URL ──────────────────────────────────────────────
 # Format: postgresql://username:password@host:port/database_name
 # Change these to match your PostgreSQL setup
-DATABASE_URL = "postgresql://neondb_owner:npg_wgfGF5jqrai7@ep-sweet-sound-akyym682.c-3.us-west-2.aws.neon.tech/neondb?sslmode=require"
+DATABASE_URL = "postgresql://neondb_owner:npg_1QMnHaDqFC6l@ep-shiny-salad-akqtz297-pooler.c-3.us-west-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+
 
 engine = create_engine(DATABASE_URL)
 
